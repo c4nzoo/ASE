@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ASE Dinslaken – Infotafel</title>
+<style>
+  /* =========================================================
+     Hier musst du normalerweise NICHTS ändern.
+     Die Inhalte kommen aus der Tabelle (siehe CONFIG unten).
+     ========================================================= */
+  :root{
+    --ase-blau:#036AB4;
+    --ase-blau-dunkel:#02508a;
+    --text:#1D1D1B;
+    --accent:#036AB4;
+    --tint:#E3EFF9;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{width:100%;height:100%;overflow:hidden;background:#0d1b2a;cursor:none}
+  body{font-family:"Myriad Pro","Segoe UI","Open Sans","Helvetica Neue",Arial,sans-serif;color:var(--text)}
+
+  /* Feste 1920x1080-Bühne, wird auf jeden Bildschirm skaliert -> Layout bleibt immer gleich */
+  #stage{
+    position:absolute;left:50%;top:50%;
+    width:1920px;height:1080px;
+    transform-origin:center center;
+    background:#fff;
+    display:grid;
+    grid-template-rows:160px 1fr 100px;
+    overflow:hidden;
+  }
+
+  /* ---------- Kopf: Logo + Uhr ---------- */
+  header{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:0 80px;
+    border-bottom:8px solid var(--ase-blau);
+    background:#fff;
+    min-width:0;
+  }
+  #logo{height:100px;width:auto;display:block}
+  #logoFallback{height:100px;display:none}
+  .clock{text-align:right;line-height:1;flex-shrink:0}
+  #time{font-size:92px;font-weight:700;color:var(--ase-blau);letter-spacing:2px;font-variant-numeric:tabular-nums}
+  #date{font-size:32px;margin-top:8px;color:var(--text)}
+
+  /* ---------- Inhalt ---------- */
+  main{
+    display:grid;
+    grid-template-columns:540px 1fr;
+    gap:80px;
+    padding:56px 96px 56px 80px;
+    align-items:center;
+    min-height:0;
+    transition:opacity .7s ease;
+  }
+  main.hidden{opacity:0}
+  #symbol{
+    width:540px;height:540px;
+    border-radius:48px;
+    background:var(--tint);
+    border:6px solid var(--accent);
+    display:flex;align-items:center;justify-content:center;
+    overflow:hidden;
+  }
+  #symbol svg,#symbol img{width:430px;height:430px;object-fit:contain}
+  #textBox{
+    height:100%;min-width:0;
+    display:flex;align-items:center;
+    overflow:hidden;
+  }
+  #textInner{width:100%;font-size:100px} /* wird automatisch verkleinert, bis alles passt */
+  #kicker{
+    font-size:.38em;font-weight:700;text-transform:uppercase;letter-spacing:.06em;
+    color:var(--accent);margin-bottom:.25em;
+  }
+  #title{font-size:1em;font-weight:800;line-height:1.08;color:var(--text);margin-bottom:.4em;overflow-wrap:break-word;hyphens:auto}
+  #points{list-style:none}
+  #points li{
+    font-size:.54em;line-height:1.25;
+    padding-left:1.3em;position:relative;margin-bottom:.45em;
+    overflow-wrap:break-word;hyphens:auto;
+  }
+  #points li::before{
+    content:"";position:absolute;left:0;top:.32em;
+    width:.6em;height:.6em;border-radius:.15em;background:var(--accent);
+  }
+  #points li b{color:var(--accent)}
+
+  /* ---------- Fuß: Kontakt + Fortschritt ---------- */
+  footer{
+    position:relative;
+    background:var(--ase-blau);color:#fff;
+    display:flex;align-items:center;justify-content:space-between;
+    padding:0 80px;font-size:30px;gap:40px;min-width:0;
+  }
+  #contact{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  #dots{display:flex;gap:14px;flex-shrink:0}
+  #dots span{width:18px;height:18px;border-radius:50%;background:rgba(255,255,255,.35)}
+  #dots span.on{background:#fff}
+  #progress{position:absolute;left:0;top:0;height:8px;width:0;background:#8EC5EE}
+
+  /* Symbol-Übersicht (index.html?symbole) */
+  #overview{display:none;position:fixed;inset:0;overflow:auto;background:#fff;cursor:auto;padding:30px;font-family:inherit}
+  #overview h1{color:var(--ase-blau);margin-bottom:10px}
+  #overview .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:18px;margin-top:20px}
+  #overview .cell{border:3px solid #E3EFF9;border-radius:16px;padding:12px;text-align:center}
+  #overview .cell svg{width:120px;height:120px}
+  #overview .cell b{display:block;font-size:20px;margin-top:6px}
+  #overview .cell small{color:#666}
+</style>
+</head>
+<body>
+
+<div id="stage">
+  <header>
+    <img id="logo" src="logo.png" alt="Albert-Schweitzer-Einrichtungen"
+         onerror="this.style.display='none';document.getElementById('logoFallback').style.display='block'">
+    <svg id="logoFallback" viewBox="0 0 900 200" aria-label="ASE">
+      <polygon points="0,195 195,5 390,195" fill="#036AB4"/>
+      <text x="195" y="165" font-size="90" font-weight="700" fill="#fff" text-anchor="middle" font-family="Arial">ASE</text>
+      <text x="430" y="95" font-size="62" font-weight="700" fill="#1D1D1B" font-family="Arial">Albert-Schweitzer-</text>
+      <text x="430" y="170" font-size="62" font-weight="700" fill="#1D1D1B" font-family="Arial">Einrichtungen</text>
+    </svg>
+    <div class="clock">
+      <div id="time">--:--:--</div>
+      <div id="date"></div>
+    </div>
+  </header>
+
+  <main id="main">
+    <div id="symbol"></div>
+    <div id="textBox">
+      <div id="textInner">
+        <div id="kicker"></div>
+        <h1 id="title"></h1>
+        <ul id="points"></ul>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <div id="progress"></div>
+    <div id="contact"></div>
+    <div id="dots"></div>
+  </footer>
+</div>
+
+<div id="overview"></div>
+
+<script src="einstellungen.js"></script>
+<script src="infotafel.js"></script>
+<script>
+/* Der Link zum Google-Skript steht in der Datei einstellungen.js */
+const E = (typeof EINSTELLUNGEN !== "undefined") ? EINSTELLUNGEN : {};
+const CONFIG = {
+  TABELLE_URL: E.SKRIPT_URL || "",  // leer = es wird folien.csv aus dem GitHub-Ordner benutzt
+  NEU_LADEN_MINUTEN: 5,           // so oft wird die Tabelle neu geholt
+  FUSSZEILE: ""                    // optionaler Text unten links, leer = nichts
+};
+
+/* Ersatz-Inhalt, falls weder Tabelle noch folien.csv erreichbar ist (z. B. Datei direkt geöffnet) */
+const NOTFALL_CSV = `aktiv,titel,untertitel,punkt1,punkt2,punkt3,punkt4,punkt5,symbol,farbe,sekunden,von,bis
+ja,Herzlich willkommen!,Albert-Schweitzer-Einrichtungen Dinslaken,Sie sind hier an der Anmeldung.,Bitte melden Sie sich bei uns.,Wir helfen Ihnen gern weiter.,,,hallo,blau,18,,`;
+
+/* ---------- Daten laden: Tabelle -> folien.csv -> Zwischenspeicher -> Notfall ---------- */
+let ALL = toSlides(parseCSV(NOTFALL_CSV));
+async function loadData(){
+  const lokal = lokaleFolien();                 // Prototyp: auf diesem Gerät bearbeitete Folien haben Vorrang
+  if (lokal){ ALL = objZuSlides(lokal); return; }
+  const sources = [];
+  if (CONFIG.TABELLE_URL) sources.push(CONFIG.TABELLE_URL + (CONFIG.TABELLE_URL.includes("?")?"&":"?") + "t=" + Date.now());
+  sources.push("folien.csv?t=" + Date.now());
+  for (const url of sources){
+    try{
+      const res = await fetch(url,{cache:"no-store"});
+      if(!res.ok) continue;
+      const txt = await res.text();
+      const slides = toSlides(parseCSV(txt));
+      if (slides.length){
+        ALL = slides;
+        try{ localStorage.setItem("ase_folien_csv", txt); }catch(e){}
+        return;
+      }
+    }catch(e){}
+  }
+  try{
+    const cached = localStorage.getItem("ase_folien_csv");
+    if (cached){ const s=toSlides(parseCSV(cached)); if(s.length) ALL=s; }
+  }catch(e){}
+}
+
+/* ---------- Anzeige ---------- */
+const $ = id=>document.getElementById(id);
+function esc(s){return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
+function pointHTML(p){
+  const i = p.indexOf(":");
+  if (i>0 && i<=28) return `<b>${esc(p.slice(0,i+1))}</b>${esc(p.slice(i+1))}`;
+  return esc(p);
+}
+// Schrift so lange verkleinern, bis ALLES in den Kasten passt -> keine Überlappung
+function fitText(){
+  const box=$("textBox"), inner=$("textInner");
+  let size=100;
+  inner.style.fontSize=size+"px";
+  while ((inner.scrollHeight>box.clientHeight || inner.scrollWidth>box.clientWidth) && size>34){
+    size-=2; inner.style.fontSize=size+"px";
+  }
+}
+function render(s){
+  const f = FARBEN[s.farbe] || FARBEN.blau;
+  $("stage").style.setProperty("--accent", f[0]);
+  $("stage").style.setProperty("--tint", f[1]);
+  $("symbol").innerHTML = symbolHTML(s.symbol);
+  $("kicker").textContent = s.untertitel;
+  $("kicker").style.display = s.untertitel ? "" : "none";
+  $("title").textContent = s.titel;
+  $("points").innerHTML = s.punkte.map(p=>`<li>${pointHTML(p)}</li>`).join("");
+  fitText();
+}
+function renderDots(n, idx){
+  $("dots").innerHTML = n>1 ? Array.from({length:n},(_,i)=>`<span class="${i===idx?"on":""}"></span>`).join("") : "";
+}
+
+let idx=-1, timer=null;
+function show(step){
+  clearTimeout(timer);
+  const list = visibleSlides();
+  if (!list.length){
+    render({titel:"Herzlich willkommen!",untertitel:"",punkte:["Bitte melden Sie sich an der Anmeldung."],symbol:"hallo",farbe:"blau"});
+    timer=setTimeout(()=>show(1),30000); return;
+  }
+  idx = ((idx+step)%list.length+list.length)%list.length;
+  const s = list[idx];
+  const main=$("main");
+  main.classList.add("hidden");
+  setTimeout(()=>{
+    render(s);
+    renderDots(list.length, idx);
+    main.classList.remove("hidden");
+    const bar=$("progress");
+    bar.style.transition="none"; bar.style.width="0";
+    void bar.offsetWidth;
+    bar.style.transition=`width ${s.sekunden}s linear`; bar.style.width="100%";
+    timer=setTimeout(()=>show(1), s.sekunden*1000);
+  }, idx===0 && step===1 && main.dataset.started!=="1" ? 0 : 700);
+  main.dataset.started="1";
+}
+
+/* ---------- Uhr ---------- */
+const TAGE=["Sonntag","Montag","Dienstag","Mittwoch","Donnerstag","Freitag","Samstag"];
+const MONATE=["Januar","Februar","März","April","Mai","Juni","Juli","August","September","Oktober","November","Dezember"];
+function tick(){
+  const d=new Date();
+  const z=n=>String(n).padStart(2,"0");
+  $("time").textContent = z(d.getHours())+":"+z(d.getMinutes())+":"+z(d.getSeconds());
+  $("date").textContent = `${TAGE[d.getDay()]}, ${d.getDate()}. ${MONATE[d.getMonth()]} ${d.getFullYear()}`;
+}
+
+/* ---------- Skalierung auf den Bildschirm ---------- */
+function scaleStage(){
+  const s=Math.min(innerWidth/1920, innerHeight/1080);
+  $("stage").style.transform=`translate(-50%,-50%) scale(${s})`;
+}
+
+/* ---------- Symbol-Übersicht für die Kolleg:innen: index.html?symbole ---------- */
+function showOverview(){
+  const rev={}; Object.entries(SYMBOL_ALIAS).forEach(([a,k])=>{ if(a!==k)(rev[k]=rev[k]||[]).push(a); });
+  $("stage").style.display="none";
+  const o=$("overview"); o.style.display="block";
+  o.innerHTML = `<h1>Symbole für die Spalte „symbol“</h1>
+    <p>Einfach den fett gedruckten Namen in die Tabelle schreiben. Die grauen Wörter funktionieren auch.
+    Eigene Bilder: einen Bild-Link (https://…) eintragen.</p>
+    <div class="grid">${Object.keys(SYMBOLE).map(k=>`<div class="cell"><svg viewBox="0 0 120 120">${SYMBOLE[k]}</svg>
+    <b>${k}</b><small>${(rev[k]||[]).join(", ")}</small></div>`).join("")}</div>`;
+}
+
+/* ---------- Start ---------- */
+(async function start(){
+  if (/[?&]symbole/.test(location.search)) { showOverview(); return; }
+  if (/[?&]vorschau/.test(location.search)) {          // Live-Vorschau für bearbeiten.html
+    scaleStage(); addEventListener("resize", scaleStage);
+    tick(); setInterval(tick, 1000);
+    document.body.style.cursor="auto";
+    addEventListener("message", e=>{
+      if (e.origin !== location.origin || !e.data || !e.data.folie) return;
+      const f = e.data.folie;
+      render({titel:f.titel||"", untertitel:f.untertitel||"", punkte:(f.punkte||[]).filter(p=>p&&p.trim()),
+              symbol:f.symbol||"info", farbe:f.farbe||"blau"});
+      renderDots(e.data.anzahl||1, e.data.nummer||0);
+    });
+    parent.postMessage({vorschauBereit:true}, location.origin);
+    return;
+  }
+  $("contact").textContent = CONFIG.FUSSZEILE;
+  scaleStage(); addEventListener("resize", scaleStage);
+  tick(); setInterval(tick, 1000);
+  await loadData();
+  show(1);
+  setInterval(loadData, CONFIG.NEU_LADEN_MINUTEN*60*1000);
+  addEventListener("storage", e=>{ if(e.key===LOKAL_KEY) loadData(); });
+  // Versteckter Zugang zur Bearbeiten-Ebene: 5x schnell auf das Logo klicken/tippen
+  let klicks=0, klickTimer=null;
+  document.querySelector("header").addEventListener("click", e=>{
+    if (!e.target.closest("#logo,#logoFallback")) return;
+    klicks++; clearTimeout(klickTimer);
+    klickTimer=setTimeout(()=>klicks=0, 2500);
+    if (klicks>=5){ klicks=0; location.href="bearbeiten.html"; }
+  });
+  // Zum Testen am PC: Pfeiltasten = vor/zurück
+  addEventListener("keydown", e=>{ if(e.key==="ArrowRight") show(1); if(e.key==="ArrowLeft") show(-1); });
+})();
+</script>
+</body>
+</html>

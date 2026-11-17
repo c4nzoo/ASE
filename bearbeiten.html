@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Infotafel bearbeiten – ASE Dinslaken</title>
+<style>
+  :root{--blau:#036AB4;--blau-d:#02508a;--hell:#E3EFF9;--text:#1D1D1B;--grau:#6b7580;--linie:#d5e2ee;--gruen:#2E7D4F;--rot:#C62828}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:"Segoe UI","Open Sans",Arial,sans-serif;color:var(--text);background:#f3f6f9;font-size:17px}
+  button{font:inherit;cursor:pointer}
+  input,select{font:inherit}
+  .hidden{display:none!important}
+
+  /* Kopf */
+  .top{position:sticky;top:0;z-index:20;background:#fff;border-bottom:5px solid var(--blau);
+       display:flex;align-items:center;gap:18px;padding:10px 20px;flex-wrap:wrap}
+  .top img{height:46px}
+  .top h1{font-size:22px;color:var(--blau);flex:1;min-width:180px}
+  #status{font-size:15px;color:var(--grau)}
+  #status.offen{color:#a35a00;font-weight:600}
+  #status.ok{color:var(--gruen);font-weight:600}
+  #speichern{background:var(--gruen);color:#fff;border:0;border-radius:12px;padding:12px 26px;font-size:19px;font-weight:700}
+  #speichern:disabled{background:#a9b4be;cursor:default}
+  .demo{background:#FFF4CC;color:#5a4a00;padding:8px 20px;font-size:15px;border-bottom:1px solid #f0d97a}
+
+  /* Aufbau */
+  .wrap{display:grid;grid-template-columns:300px 1fr;gap:20px;padding:20px;max-width:1500px;margin:0 auto;align-items:start}
+  .wrap>*{min-width:0}
+  @media (max-width:900px){.wrap{grid-template-columns:1fr;padding:12px}}
+  @media (max-width:600px){.top{padding:8px 12px;gap:8px}.top img{height:32px}.top h1{font-size:18px;min-width:0}#speichern{padding:10px 18px;font-size:17px}.karte{padding:14px}}
+  .karte{background:#fff;border:1px solid var(--linie);border-radius:16px;padding:18px}
+
+  /* Liste */
+  .liste h2{font-size:18px;margin-bottom:10px}
+  #folienListe{list-style:none;display:flex;flex-direction:column;gap:8px;margin-bottom:12px}
+  #folienListe li button{width:100%;display:flex;align-items:center;gap:10px;text-align:left;background:#fff;
+      border:2px solid var(--linie);border-radius:12px;padding:8px 10px}
+  #folienListe li button.aktiv{border-color:var(--blau);background:var(--hell)}
+  #folienListe .nr{font-weight:700;color:var(--blau);width:22px;flex-shrink:0}
+  #folienListe .mini{width:42px;height:42px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+  #folienListe .mini svg,#folienListe .mini img{width:40px;height:40px;object-fit:contain}
+  #folienListe .t{flex:1;min-width:0}
+  #folienListe .t b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  #folienListe .t small{color:var(--grau);font-size:13px}
+  #folienListe .aus{opacity:.5}
+  .gross{width:100%;background:var(--blau);color:#fff;border:0;border-radius:12px;padding:12px;font-size:18px;font-weight:700}
+
+  /* Vorschau */
+  .vorschau-titel{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;gap:10px;flex-wrap:wrap}
+  .vorschau-titel h2{font-size:18px}
+  .vorschau-titel small{color:var(--grau)}
+  .tv{position:relative;width:100%;max-width:820px;aspect-ratio:16/9;border:10px solid #222;border-radius:12px;background:#000;overflow:hidden}
+  .tv iframe{position:absolute;inset:0;width:100%;height:100%;border:0;pointer-events:none}
+
+  /* Formular */
+  .feld{margin-top:22px}
+  .feld>label,.feld>.lbl{display:block;font-weight:700;font-size:18px;margin-bottom:4px}
+  .hilfe{font-size:14px;color:var(--grau);margin-bottom:8px}
+  .eingabe{width:100%;padding:12px 14px;border:2px solid var(--linie);border-radius:10px;font-size:18px;background:#fff}
+  .eingabe:focus{outline:none;border-color:var(--blau)}
+  .zaehler{font-size:13px;color:var(--grau);text-align:right;margin-top:2px}
+  .zaehler.lang{color:#a35a00;font-weight:600}
+  .saetze{display:flex;flex-direction:column;gap:8px}
+
+  .bilder{display:grid;grid-template-columns:repeat(auto-fill,minmax(84px,1fr));gap:8px}
+  .bilder button{background:#fff;border:3px solid var(--linie);border-radius:12px;padding:6px 4px;font-size:12px;color:var(--grau)}
+  .bilder button svg,.bilder button img{width:56px;height:56px;display:block;margin:0 auto 2px;object-fit:contain}
+  .bilder button.an{border-color:var(--blau);background:var(--hell);color:var(--text);font-weight:700}
+  .hochladen{margin-top:10px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .knopf{background:#fff;border:2px solid var(--blau);color:var(--blau);border-radius:10px;padding:10px 16px;font-weight:700}
+  .knopf.rot{border-color:var(--rot);color:var(--rot)}
+
+  .farben{display:flex;gap:10px;flex-wrap:wrap}
+  .farben button{border:3px solid transparent;border-radius:12px;padding:8px 12px;background:#fff;display:flex;align-items:center;gap:8px;box-shadow:0 0 0 1px var(--linie)}
+  .farben button span{width:26px;height:26px;border-radius:8px;display:inline-block}
+  .farben button.an{border-color:var(--text);font-weight:700}
+
+  .wahl{display:flex;gap:8px;flex-wrap:wrap}
+  .wahl button{border:2px solid var(--linie);background:#fff;border-radius:10px;padding:10px 16px}
+  .wahl button.an{border-color:var(--blau);background:var(--hell);font-weight:700}
+
+  .schalter,.feld>.schalter{display:flex;align-items:center;gap:12px;cursor:pointer;user-select:none;margin:0}
+  .schalter input{display:none}
+  .schalter .bahn{width:62px;height:34px;border-radius:20px;background:#b9c3cc;position:relative;transition:.2s;flex-shrink:0}
+  .schalter .bahn::after{content:"";position:absolute;top:4px;left:4px;width:26px;height:26px;border-radius:50%;background:#fff;transition:.2s}
+  .schalter input:checked+.bahn{background:var(--gruen)}
+  .schalter input:checked+.bahn::after{left:32px}
+  .schalter b{font-size:18px}
+
+  .daten{display:flex;gap:16px;flex-wrap:wrap}
+  .daten div{display:flex;flex-direction:column;gap:4px}
+  .daten input{padding:10px;border:2px solid var(--linie);border-radius:10px;font-size:17px}
+
+  .aktionen{display:flex;gap:10px;flex-wrap:wrap;margin-top:26px;padding-top:18px;border-top:1px solid var(--linie)}
+
+  /* PIN */
+  .pin{max-width:420px;margin:12vh auto;text-align:center}
+  .pin img{height:70px;margin-bottom:16px}
+  .pin h2{color:var(--blau);margin-bottom:6px}
+  .pin input{text-align:center;font-size:26px;letter-spacing:6px;margin:16px 0}
+  #pinFehler{color:var(--rot);margin-top:10px;min-height:22px}
+  .meldung{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#1D1D1B;color:#fff;
+           padding:14px 24px;border-radius:12px;font-size:17px;z-index:50;box-shadow:0 6px 20px rgba(0,0,0,.25)}
+</style>
+</head>
+<body>
+
+<!-- PIN-Eingabe -->
+<div id="pinSeite" class="karte pin hidden">
+  <img src="logo.png" alt="ASE">
+  <h2>Infotafel bearbeiten</h2>
+  <p id="pinText">Bitte geben Sie das Passwort ein.</p>
+  <input id="pin" class="eingabe" type="password" autocomplete="current-password">
+  <input id="pin2" class="eingabe hidden" type="password" placeholder="Passwort wiederholen" autocomplete="new-password" style="margin-top:0">
+  <button id="pinOk" class="gross">Weiter</button>
+  <div id="pinFehler"></div>
+  <p style="margin-top:14px"><a href="#" id="vergessen" class="hidden" style="color:var(--grau);font-size:14px">Passwort vergessen?</a></p>
+  <p style="margin-top:6px"><a href="index.html" style="color:var(--blau);font-size:14px">← Zurück zur Infotafel</a></p>
+</div>
+
+<!-- Editor -->
+<div id="editor" class="hidden">
+  <div class="top">
+    <img src="logo.png" alt="ASE">
+    <h1>Infotafel bearbeiten</h1>
+    <a href="index.html" id="zurueck" style="color:var(--blau);font-weight:700;text-decoration:none;white-space:nowrap">← Zur Infotafel</a>
+    <a href="#" id="abmelden" class="hidden" style="color:var(--grau);text-decoration:none;white-space:nowrap">Abmelden</a>
+    <span id="status">Lade …</span>
+    <button id="speichern" disabled>Speichern</button>
+  </div>
+  <div id="demoHinweis" class="demo hidden"><b>Prototyp:</b> Änderungen werden auf <b>diesem Gerät</b> gespeichert. Damit der Fernseher sie zeigt, direkt am Fernseher bearbeiten – oder unten links „Sicherung speichern“ und am Fernseher „Sicherung laden“.</div>
+
+  <div class="wrap">
+    <aside class="karte liste">
+      <h2>Folien</h2>
+      <ol id="folienListe"></ol>
+      <button id="neu" class="gross">+ Neue Folie</button>
+      <p class="hilfe" style="margin-top:12px">Die Folien laufen auf dem Fernseher in dieser Reihenfolge.</p>
+      <div id="lokalWerkzeuge" class="hidden" style="margin-top:16px;display:flex;flex-direction:column;gap:8px">
+        <button class="knopf" id="export">⬇ Sicherung speichern</button>
+        <button class="knopf" id="import">⬆ Sicherung laden</button>
+        <input type="file" id="importDatei" accept=".json,application/json" class="hidden">
+        <button class="knopf" id="pwAendern" style="border-color:var(--grau);color:var(--grau)">Passwort ändern</button>
+      </div>
+    </aside>
+
+    <main class="karte">
+      <div class="vorschau-titel">
+        <h2>So sieht es auf dem Fernseher aus</h2>
+        <small>Text wird automatisch passend verkleinert</small>
+      </div>
+      <div class="tv"><iframe id="vorschau" src="index.html?vorschau" title="Vorschau"></iframe></div>
+
+      <div class="feld">
+        <label class="schalter"><input type="checkbox" id="aktiv"><span class="bahn"></span><b id="aktivText">Folie wird gezeigt</b></label>
+      </div>
+
+      <div class="feld">
+        <label for="titel">Überschrift</label>
+        <div class="hilfe">Kurz und klar, z. B. „Wohnen“ oder „Herzlich willkommen!“</div>
+        <input id="titel" class="eingabe" maxlength="80">
+        <div class="zaehler" id="titelZ"></div>
+      </div>
+
+      <div class="feld">
+        <label for="untertitel">Kleine Zeile über der Überschrift <span style="font-weight:400;color:var(--grau)">(freiwillig)</span></label>
+        <input id="untertitel" class="eingabe" maxlength="80">
+      </div>
+
+      <div class="feld">
+        <div class="lbl">Text</div>
+        <div class="hilfe">Bis zu 5 kurze Sätze – 2 bis 3 sind ideal. Leere Felder werden nicht gezeigt.
+          Tipp: Text vor einem Doppelpunkt wird fett („Zeit: 9 bis 12 Uhr“).</div>
+        <div class="saetze" id="saetze"></div>
+      </div>
+
+      <div class="feld">
+        <div class="lbl">Bild</div>
+        <div class="hilfe">Einfach antippen.</div>
+        <div class="bilder" id="bilder"></div>
+        <div class="hochladen">
+          <button class="knopf" id="fotoKnopf">📷 Eigenes Bild hochladen</button>
+          <input type="file" id="fotoDatei" accept="image/*" class="hidden">
+          <span class="hilfe" id="fotoInfo" style="margin:0">Nur Bilder, die wir nutzen dürfen. Keine Fotos von Personen ohne Einverständnis.</span>
+        </div>
+      </div>
+
+      <div class="feld">
+        <div class="lbl">Farbe</div>
+        <div class="hilfe">Normal: Blau. Für wichtige Hinweise: Rot.</div>
+        <div class="farben" id="farben"></div>
+      </div>
+
+      <div class="feld">
+        <div class="lbl">Wie lange soll die Folie stehen bleiben?</div>
+        <div class="wahl" id="dauer"></div>
+      </div>
+
+      <div class="feld">
+        <div class="lbl">Nur für einen bestimmten Zeitraum zeigen? <span style="font-weight:400;color:var(--grau)">(freiwillig)</span></div>
+        <div class="hilfe">Leer lassen = immer zeigen. Die Folie erscheint und verschwindet dann von allein.</div>
+        <div class="daten">
+          <div><span>Zeigen ab</span><input type="date" id="von"></div>
+          <div><span>Zeigen bis</span><input type="date" id="bis"></div>
+        </div>
+      </div>
+
+      <div class="aktionen">
+        <button class="knopf" id="hoch">↑ Nach vorne</button>
+        <button class="knopf" id="runter">↓ Nach hinten</button>
+        <button class="knopf" id="kopie">Kopieren</button>
+        <button class="knopf rot" id="loeschen">Folie löschen</button>
+      </div>
+    </main>
+  </div>
+</div>
+
+<script src="einstellungen.js"></script>
+<script src="infotafel.js"></script>
+<script src="zugang.js"></script>
+<script>
+const EIN = (typeof EINSTELLUNGEN!=="undefined") ? EINSTELLUNGEN : {};
+const URL_SKRIPT = EIN.SKRIPT_URL || "";
+// Speicherweg: GitHub (Passwort) > Google-Skript (PIN) > Demo
+const MODUS = (EIN.GITHUB_ZUGANG && EIN.GITHUB_REPO) ? "github" : URL_SKRIPT ? "google" : "lokal";
+const DEMO = false;
+const LOKAL = MODUS==="lokal";
+const PW_KEY = "ase_passwort";
+let ghToken="", ghSha=null;
+const bildCache={};                       // frisch hochgeladene Bilder sofort in der Vorschau zeigen
+const zeigeSymbol = s => bildCache[s] || s;
+const $ = id=>document.getElementById(id);
+const esc = s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const FARB_NAMEN = {blau:"Blau",gruen:"Grün",gelb:"Gelb",orange:"Orange",rot:"Rot",lila:"Lila",grau:"Grau"};
+const DAUER = [[12,"Kurz (12 Sek.)"],[18,"Normal (18 Sek.)"],[25,"Lang (25 Sek.)"],[35,"Sehr lang (35 Sek.)"]];
+
+let folien=[], aktuell=0, geaendert=false, pin="";
+
+/* ---------- Hilfsfunktionen ---------- */
+function deZuIso(s){ const d=parseDate(s); if(!d) return "";
+  return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }
+function isoZuDe(s){ const m=String(s||"").match(/^(\d{4})-(\d{2})-(\d{2})$/); return m?`${m[3]}.${m[2]}.${m[1]}`:""; }
+function zeileZuFolie(r){
+  return { aktiv: !["nein","n","0","aus"].includes(norm(r.aktiv)), titel:r.titel||"", untertitel:r.untertitel||"",
+    punkte:[r.punkt1,r.punkt2,r.punkt3,r.punkt4,r.punkt5].map(p=>p||""),
+    symbol:r.symbol||"info", farbe:FARBEN[norm(r.farbe)]?norm(r.farbe):"blau",
+    sekunden:parseInt(r.sekunden,10)||STANDARD_SEKUNDEN, von:r.von||"", bis:r.bis||"" };
+}
+function csvZuFolien(txt){ return parseCSV(txt).filter(r=>JA_NEIN.includes(norm(r.aktiv))).map(zeileZuFolie).filter(f=>f.titel||f.punkte.some(p=>p)); }
+function neueFolie(){ return {aktiv:true,titel:"Neue Folie",untertitel:"",punkte:["","","","",""],symbol:"info",farbe:"blau",sekunden:18,von:"",bis:""}; }
+function meldung(t, ms=2600){ const m=document.createElement("div"); m.className="meldung"; m.textContent=t; document.body.appendChild(m); setTimeout(()=>m.remove(),ms); }
+async function senden(daten){
+  const res = await fetch(URL_SKRIPT,{method:"POST",body:JSON.stringify(Object.assign({pin},daten))});
+  return res.json();
+}
+
+/* ---------- GitHub ---------- */
+const KOEPFE = ["Anzeigen?","Überschrift","Kleine Zeile über der Überschrift","Satz 1","Satz 2","Satz 3","Satz 4","Satz 5","Bild / Piktogramm","Farbe","Sekunden","Zeigen ab","Zeigen bis"];
+function folienZuCsv(liste){
+  const q=v=>'"'+String(v??"").replace(/"/g,'""')+'"';
+  const zeilen=[KOEPFE].concat(liste.map(f=>{
+    const p=f.punkte.map(x=>x.trim()).filter(Boolean).concat(["","","","",""]).slice(0,5);
+    return [f.aktiv?"ja":"nein",f.titel,f.untertitel].concat(p).concat([f.symbol,f.farbe,f.sekunden||"",f.von||"",f.bis||""]);
+  }));
+  return "\uFEFF"+zeilen.map(z=>z.map(q).join(";")).join("\r\n")+"\r\n";
+}
+async function ghLaden(){
+  const r=await ZUGANG.gh(ghToken,EIN.GITHUB_REPO,"/contents/folien.csv?ref="+encodeURIComponent(EIN.GITHUB_BRANCH||"main")+"&t="+Date.now());
+  if(r.status===404){ ghSha=null; return []; }
+  if(!r.ok) throw new Error("GitHub "+r.status);
+  const j=await r.json(); ghSha=j.sha;
+  return csvZuFolien(ZUGANG.b64ZuText(j.content));
+}
+async function ghSpeichern(liste){
+  const body={message:"Infotafel: Folien geändert",content:ZUGANG.textZuB64(folienZuCsv(liste)),branch:EIN.GITHUB_BRANCH||"main"};
+  if(ghSha) body.sha=ghSha;
+  const r=await ZUGANG.gh(ghToken,EIN.GITHUB_REPO,"/contents/folien.csv",{method:"PUT",body:JSON.stringify(body)});
+  if(r.status===409||r.status===422) throw new Error("Jemand anderes hat gerade gespeichert. Bitte Seite neu laden");
+  if(r.status===401) throw new Error("Zugang abgelaufen – bitte neu einrichten");
+  if(!r.ok) throw new Error("GitHub "+r.status);
+  ghSha=(await r.json()).content.sha;
+}
+async function ghBild(dataUrl,name){
+  const pfad="bilder/"+Date.now()+"-"+(norm(name).replace(/\.\w+$/,"").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,40)||"bild")+".jpg";
+  const r=await ZUGANG.gh(ghToken,EIN.GITHUB_REPO,"/contents/"+pfad,{method:"PUT",
+    body:JSON.stringify({message:"Infotafel: Bild hinzugefügt",content:dataUrl.split(",")[1],branch:EIN.GITHUB_BRANCH||"main"})});
+  if(!r.ok) throw new Error("GitHub "+r.status);
+  bildCache[pfad]=dataUrl;
+  return pfad;
+}
+
+/* ---------- Laden ---------- */
+async function laden(){
+  let liste=[];
+  if (MODUS==="github"){ try{ liste=await ghLaden(); }catch(e){ meldung("Verbindung zu GitHub fehlgeschlagen – bitte Seite neu laden.",5000); } }
+  else if (LOKAL){ const l=lokaleFolien(); if(l) liste=l.map(f=>Object.assign(neueFolie(),f,{punkte:(f.punkte||[]).concat(["","","","",""]).slice(0,5)})); }
+  else { try{ const r=await fetch(URL_SKRIPT+"?t="+Date.now()); liste=csvZuFolien(await r.text()); }catch(e){ meldung("Verbindung fehlgeschlagen – bitte Seite neu laden."); } }
+  if (!liste.length){ try{ const r=await fetch("folien.csv?t="+Date.now()); liste=csvZuFolien(await r.text()); }catch(e){} }
+  if (!liste.length) liste=[neueFolie()];
+  folien=liste; aktuell=0; geaendert=false;
+  zeichneAlles(); status();
+}
+
+/* ---------- Speichern ---------- */
+async function speichern(){
+  const daten = folien.map(f=>Object.assign({},f,{punkte:f.punkte.map(p=>p.trim()).filter(Boolean)}));
+  $("speichern").disabled=true; $("status").className=""; $("status").textContent="Speichere …";
+  try{
+    if (LOKAL){
+      try{ localStorage.setItem(LOKAL_KEY, JSON.stringify(folien)); }
+      catch(e){ throw new Error("Der Speicher ist voll. Bitte ein paar eigene Bilder entfernen oder kleinere nehmen"); }
+    }
+    else if (MODUS==="github"){ await ghSpeichern(folien); }
+    else { const r=await senden({aktion:"speichern",folien:daten}); if(!r.ok) throw new Error(r.fehler||"Fehler"); }
+    geaendert=false; status(); meldung("✓ Gespeichert. Der Fernseher zeigt die Änderung in wenigen Minuten.",4000);
+  }catch(e){ geaendert=true; status(); meldung("Speichern hat nicht geklappt: "+e.message+". Bitte nochmal versuchen.",5000); }
+}
+function status(){
+  const s=$("status");
+  if (geaendert){ s.textContent="● Nicht gespeicherte Änderungen"; s.className="offen"; $("speichern").disabled=false; }
+  else { s.textContent="✓ Alles gespeichert"; s.className="ok"; $("speichern").disabled=true; }
+}
+function aenderung(){ geaendert=true; status(); zeichneListe(); vorschau(); }
+
+/* ---------- Anzeige ---------- */
+function zeichneListe(){
+  const heute=new Date();
+  $("folienListe").innerHTML = folien.map((f,i)=>{
+    const bis=parseDate(f.bis,true), von=parseDate(f.von);
+    let info = !f.aktiv ? "Versteckt" : (bis&&bis<heute) ? "Abgelaufen" : (von&&von>heute) ? "Ab "+f.von : bis ? "Bis "+f.bis : "Wird gezeigt";
+    const aus = !f.aktiv || (bis&&bis<heute) || (von&&von>heute);
+    return `<li><button data-i="${i}" class="${i===aktuell?"aktiv":""}">
+      <span class="nr">${i+1}</span><span class="mini ${aus?"aus":""}">${symbolHTML(zeigeSymbol(f.symbol))}</span>
+      <span class="t ${aus?"aus":""}"><b>${esc(f.titel||"(ohne Überschrift)")}</b><small>${info}</small></span></button></li>`;
+  }).join("");
+}
+function zeichneFormular(){
+  const f=folien[aktuell];
+  $("aktiv").checked=f.aktiv; $("aktivText").textContent=f.aktiv?"Folie wird gezeigt":"Folie ist versteckt";
+  $("titel").value=f.titel; $("untertitel").value=f.untertitel;
+  $("saetze").innerHTML=f.punkte.map((p,i)=>`<input class="eingabe satz" data-i="${i}" maxlength="140" placeholder="Satz ${i+1}${i?" (freiwillig)":""}" value="${esc(p)}">`).join("");
+  $("von").value=deZuIso(f.von); $("bis").value=deZuIso(f.bis);
+  zaehler(); zeichneBilder(); zeichneFarben(); zeichneDauer();
+}
+function zaehler(){
+  const n=$("titel").value.length, z=$("titelZ");
+  z.textContent = n>30 ? `${n} Zeichen – lieber kürzer, sonst wird die Schrift klein` : `${n} Zeichen`;
+  z.className = "zaehler"+(n>30?" lang":"");
+}
+function zeichneBilder(){
+  const f=folien[aktuell], eigen=/^(https?:|data:|bilder\/)/i.test(f.symbol)||/\.(png|jpe?g|svg|gif|webp)$/i.test(f.symbol);
+  let html = eigen ? `<button class="an" data-s="${esc(f.symbol)}">${symbolHTML(zeigeSymbol(f.symbol))}Eigenes Bild</button>` : "";
+  html += Object.keys(SYMBOLE).map(k=>`<button data-s="${k}" class="${(SYMBOLE[norm(f.symbol)]?norm(f.symbol):SYMBOL_ALIAS[norm(f.symbol)])===k&&!eigen?"an":""}">${symbolHTML(k)}${k}</button>`).join("");
+  $("bilder").innerHTML=html;
+}
+function zeichneFarben(){
+  const f=folien[aktuell];
+  $("farben").innerHTML=Object.keys(FARBEN).map(k=>`<button data-f="${k}" class="${f.farbe===k?"an":""}"><span style="background:${FARBEN[k][0]}"></span>${FARB_NAMEN[k]}</button>`).join("");
+}
+function zeichneDauer(){
+  const f=folien[aktuell], s=f.sekunden;
+  const liste = DAUER.some(d=>d[0]===s) ? DAUER : DAUER.concat([[s,s+" Sek."]]);
+  $("dauer").innerHTML=liste.map(([v,t])=>`<button data-d="${v}" class="${v===s?"an":""}">${t}</button>`).join("");
+}
+let bereit=false;
+function vorschau(){
+  if(!bereit || !folien[aktuell]) return;
+  $("vorschau").contentWindow.postMessage({folie:Object.assign({},folien[aktuell],{symbol:zeigeSymbol(folien[aktuell].symbol)}),nummer:aktuell,anzahl:folien.length}, location.origin);
+}
+function zeichneAlles(){ zeichneListe(); zeichneFormular(); vorschau(); }
+
+/* ---------- Eingaben ---------- */
+addEventListener("message",e=>{ if(e.origin===location.origin && e.data && e.data.vorschauBereit){ bereit=true; vorschau(); } });
+$("folienListe").addEventListener("click",e=>{ const b=e.target.closest("button[data-i]"); if(!b) return; aktuell=+b.dataset.i; zeichneAlles(); window.scrollTo({top:0,behavior:"smooth"}); });
+$("titel").addEventListener("input",e=>{ folien[aktuell].titel=e.target.value; zaehler(); aenderung(); });
+$("untertitel").addEventListener("input",e=>{ folien[aktuell].untertitel=e.target.value; aenderung(); });
+$("saetze").addEventListener("input",e=>{ const i=e.target.dataset.i; if(i==null) return; folien[aktuell].punkte[+i]=e.target.value; aenderung(); });
+$("aktiv").addEventListener("change",e=>{ folien[aktuell].aktiv=e.target.checked; $("aktivText").textContent=e.target.checked?"Folie wird gezeigt":"Folie ist versteckt"; aenderung(); });
+$("bilder").addEventListener("click",e=>{ const b=e.target.closest("button[data-s]"); if(!b) return; folien[aktuell].symbol=b.dataset.s; zeichneBilder(); aenderung(); });
+$("farben").addEventListener("click",e=>{ const b=e.target.closest("button[data-f]"); if(!b) return; folien[aktuell].farbe=b.dataset.f; zeichneFarben(); aenderung(); });
+$("dauer").addEventListener("click",e=>{ const b=e.target.closest("button[data-d]"); if(!b) return; folien[aktuell].sekunden=+b.dataset.d; zeichneDauer(); aenderung(); });
+$("von").addEventListener("change",e=>{ folien[aktuell].von=isoZuDe(e.target.value); aenderung(); });
+$("bis").addEventListener("change",e=>{ folien[aktuell].bis=isoZuDe(e.target.value); aenderung(); });
+$("neu").addEventListener("click",()=>{ folien.splice(aktuell+1,0,neueFolie()); aktuell++; zeichneAlles(); aenderung(); $("titel").focus(); $("titel").select(); });
+$("kopie").addEventListener("click",()=>{ const k=JSON.parse(JSON.stringify(folien[aktuell])); k.titel+=" (Kopie)"; folien.splice(aktuell+1,0,k); aktuell++; zeichneAlles(); aenderung(); });
+$("hoch").addEventListener("click",()=>{ if(aktuell===0) return; [folien[aktuell-1],folien[aktuell]]=[folien[aktuell],folien[aktuell-1]]; aktuell--; zeichneAlles(); aenderung(); });
+$("runter").addEventListener("click",()=>{ if(aktuell>=folien.length-1) return; [folien[aktuell+1],folien[aktuell]]=[folien[aktuell],folien[aktuell+1]]; aktuell++; zeichneAlles(); aenderung(); });
+$("loeschen").addEventListener("click",()=>{
+  if(!confirm(`Folie „${folien[aktuell].titel}“ wirklich löschen?\n\nTipp: Mit dem Schalter oben kann man eine Folie auch nur verstecken.`)) return;
+  folien.splice(aktuell,1); if(!folien.length) folien.push(neueFolie()); aktuell=Math.min(aktuell,folien.length-1); zeichneAlles(); aenderung();
+});
+$("speichern").addEventListener("click",speichern);
+addEventListener("keydown",e=>{ if((e.ctrlKey||e.metaKey)&&e.key==="s"){ e.preventDefault(); if(geaendert) speichern(); } });
+addEventListener("beforeunload",e=>{ if(geaendert){ e.preventDefault(); e.returnValue=""; } });
+
+/* ---------- Eigenes Bild: verkleinern und hochladen ---------- */
+$("fotoKnopf").addEventListener("click",()=>$("fotoDatei").click());
+$("fotoDatei").addEventListener("change",async e=>{
+  const datei=e.target.files[0]; e.target.value=""; if(!datei) return;
+  $("fotoInfo").textContent="Bild wird vorbereitet …";
+  try{
+    const bild = await new Promise((ok,fehler)=>{ const i=new Image(); i.onload=()=>ok(i); i.onerror=fehler; i.src=URL.createObjectURL(datei); });
+    const max=LOKAL?700:900, f=Math.min(1, max/Math.max(bild.width,bild.height));
+    const c=document.createElement("canvas"); c.width=Math.round(bild.width*f); c.height=Math.round(bild.height*f);
+    const g=c.getContext("2d"); g.fillStyle="#fff"; g.fillRect(0,0,c.width,c.height); g.drawImage(bild,0,0,c.width,c.height);
+    const dataUrl=c.toDataURL("image/jpeg",LOKAL?0.8:0.88);
+    let url=dataUrl;
+    if(MODUS==="github"){
+      $("fotoInfo").textContent="Bild wird hochgeladen …";
+      url=await ghBild(dataUrl,datei.name);
+    } else if(!LOKAL){
+      $("fotoInfo").textContent="Bild wird hochgeladen …";
+      const r=await senden({aktion:"bild",name:datei.name.replace(/\.\w+$/,"")+".jpg",typ:"image/jpeg",daten:dataUrl.split(",")[1]});
+      if(!r.ok) throw new Error(r.fehler||"Fehler");
+      url=r.url;
+    }
+    folien[aktuell].symbol=url; zeichneBilder(); aenderung();
+    $("fotoInfo").textContent="✓ Bild eingefügt.";
+  }catch(err){ $("fotoInfo").textContent="Das Bild konnte nicht hochgeladen werden. Bitte nochmal versuchen."; }
+});
+
+/* ---------- Passwort / PIN ---------- */
+async function ghAnmelden(pw){
+  ghToken = await ZUGANG.entschluesseln(EIN.GITHUB_ZUGANG, pw);   // falsches Passwort -> Fehler
+  const r = await ZUGANG.gh(ghToken, EIN.GITHUB_REPO, "");
+  if (r.status===401) throw new Error("abgelaufen");
+}
+function gespeichertesPw(){ try{ return JSON.parse(localStorage.getItem(PW_KEY)||"null"); }catch(e){ return null; } }
+function pwSetzen(pw){
+  const salz=Math.random().toString(36).slice(2)+Date.now().toString(36);
+  localStorage.setItem(PW_KEY, JSON.stringify({salz, hash:passwortHash(pw,salz)}));
+}
+async function pinPruefen(){
+  pin=$("pin").value; $("pinFehler").textContent="Prüfe …";
+  if (LOKAL){
+    const g=gespeichertesPw();
+    if (!g){                                    // erstes Mal: Passwort festlegen
+      if (pin.length<6){ $("pinFehler").textContent="Bitte mindestens 6 Zeichen."; return; }
+      if (pin!==$("pin2").value){ $("pinFehler").textContent="Die beiden Passwörter sind nicht gleich."; return; }
+      try{ pwSetzen(pin); }catch(e){ $("pinFehler").textContent="Dieser Browser kann nichts speichern."; return; }
+    } else if (passwortHash(pin,g.salz)!==g.hash){ $("pinFehler").textContent="Das Passwort stimmt nicht."; return; }
+    try{ sessionStorage.setItem("ase_lokal_ok", String(Date.now())); }catch(e){}
+    starten(); return;
+  }
+  if (MODUS==="github"){
+    try{ await ghAnmelden(pin); }
+    catch(e){ $("pinFehler").textContent = e.message==="abgelaufen" ? "Der Zugang ist abgelaufen. Bitte neu einrichten (einrichten.html)." : "Das Passwort stimmt nicht."; return; }
+    try{ sessionStorage.setItem("ase_pw",pin); }catch(e){}
+    starten(); return;
+  }
+  pin=pin.trim();
+  try{
+    const r=await senden({aktion:"pruefen"});
+    if(!r.ok){ $("pinFehler").textContent="Die PIN stimmt nicht."; return; }
+    try{ sessionStorage.setItem("ase_pin",pin); }catch(e){}
+    starten();
+  }catch(e){ $("pinFehler").textContent="Keine Verbindung. Bitte später nochmal versuchen."; }
+}
+$("pinOk").addEventListener("click",pinPruefen);
+$("pin").addEventListener("keydown",e=>{ if(e.key==="Enter") pinPruefen(); });
+
+$("zurueck").addEventListener("click",()=>{ try{ sessionStorage.removeItem("ase_lokal_ok"); sessionStorage.removeItem("ase_pw"); sessionStorage.removeItem("ase_pin"); }catch(x){} });
+$("abmelden").addEventListener("click",e=>{ e.preventDefault(); try{ sessionStorage.removeItem("ase_pw"); sessionStorage.removeItem("ase_pin"); sessionStorage.removeItem("ase_lokal_ok"); }catch(x){} geaendert=false; location.href="index.html"; });
+$("vergessen").addEventListener("click",e=>{
+  e.preventDefault();
+  if(!confirm("Passwort zurücksetzen?\n\nAus Sicherheitsgründen werden dabei auch die auf diesem Gerät bearbeiteten Folien gelöscht – die Infotafel zeigt dann wieder den Standard-Inhalt.\n(Tipp: Mit einer „Sicherung“ lassen sich Folien wiederherstellen.)")) return;
+  try{ localStorage.removeItem(PW_KEY); localStorage.removeItem(LOKAL_KEY); }catch(x){}
+  location.reload();
+});
+$("pwAendern").addEventListener("click",()=>{
+  const a=prompt("Neues Passwort (mindestens 6 Zeichen):"); if(a===null) return;
+  if(a.length<6) return meldung("Das Passwort muss mindestens 6 Zeichen haben.");
+  const b=prompt("Neues Passwort bitte wiederholen:"); if(b===null) return;
+  if(a!==b) return meldung("Die Passwörter waren nicht gleich – nichts geändert.");
+  pwSetzen(a); meldung("✓ Passwort geändert.");
+});
+$("export").addEventListener("click",()=>{
+  const blob=new Blob([JSON.stringify({art:"ASE-Infotafel-Sicherung",stand:new Date().toISOString(),folien},null,1)],{type:"application/json"});
+  const a=document.createElement("a"); a.href=URL.createObjectURL(blob);
+  a.download="infotafel-sicherung-"+new Date().toISOString().slice(0,10)+".json"; document.body.appendChild(a); a.click(); a.remove();
+});
+$("import").addEventListener("click",()=>$("importDatei").click());
+$("importDatei").addEventListener("change",async e=>{
+  const d=e.target.files[0]; e.target.value=""; if(!d) return;
+  try{
+    const j=JSON.parse(await d.text());
+    if(!j || !Array.isArray(j.folien) || !j.folien.length) throw 0;
+    if(!confirm(`Sicherung vom ${String(j.stand||"").slice(0,10)} laden?\nDie aktuellen Folien werden ersetzt (erst nach „Speichern“).`)) return;
+    folien=j.folien.map(f=>Object.assign(neueFolie(),f,{punkte:(f.punkte||[]).concat(["","","","",""]).slice(0,5)}));
+    aktuell=0; zeichneAlles(); aenderung(); meldung("Sicherung geladen – jetzt „Speichern“ drücken.",4000);
+  }catch(x){ meldung("Das ist keine gültige Sicherungsdatei.",4000); }
+});
+function starten(){ if(!DEMO) $("abmelden").classList.remove("hidden"); $("pinSeite").classList.add("hidden"); $("editor").classList.remove("hidden"); laden(); }
+
+(function(){
+  if (LOKAL){
+    $("demoHinweis").classList.remove("hidden"); $("lokalWerkzeuge").classList.remove("hidden");
+    // Anmeldung gilt höchstens 10 Minuten (wichtig am Fernseher, wo der Tab immer offen bleibt)
+    let ok=false; try{ ok=Date.now()-Number(sessionStorage.getItem("ase_lokal_ok")||0) < 10*60*1000; }catch(e){}
+    if (ok && gespeichertesPw()) { starten(); return; }
+    if (!gespeichertesPw()){
+      $("pinText").innerHTML="<b>Erster Start:</b> Bitte ein Passwort festlegen (mind. 6 Zeichen).<br>Danach fragt die Seite immer danach.";
+      $("pin2").classList.remove("hidden"); $("pin").setAttribute("placeholder","Neues Passwort"); $("pinOk").textContent="Passwort festlegen";
+      $("pin2").addEventListener("keydown",e=>{ if(e.key==="Enter") pinPruefen(); });
+    } else $("vergessen").classList.remove("hidden");
+    $("pinSeite").classList.remove("hidden"); $("pin").focus(); return;
+  }
+  if (MODUS==="github"){
+    let pw=""; try{ pw=sessionStorage.getItem("ase_pw")||""; }catch(e){}
+    const zeigen=()=>{ $("pinSeite").classList.remove("hidden"); $("pin").focus(); };
+    if (pw) ghAnmelden(pw).then(starten).catch(zeigen); else zeigen();
+    return;
+  }
+  $("pinText").textContent="Bitte geben Sie die PIN ein.";
+  try{ pin=sessionStorage.getItem("ase_pin")||""; }catch(e){}
+  if (pin) { senden({aktion:"pruefen"}).then(r=>{ if(r.ok) starten(); else $("pinSeite").classList.remove("hidden"); }).catch(()=>$("pinSeite").classList.remove("hidden")); }
+  else { $("pinSeite").classList.remove("hidden"); $("pin").focus(); }
+})();
+</script>
+</body>
+</html>
