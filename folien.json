@@ -1,6 +1,6 @@
 {
  "art": "ASE-Infotafel-Sicherung",
- "stand": "2026-11-18T13:50:10.717Z",
+ "stand": "2026-11-18T13:54:20.550Z",
  "folien": [
   {
    "aktiv": true,
@@ -139,7 +139,7 @@
    "bis": ""
   },
   {
-   "aktiv": false,
+   "aktiv": true,
    "titel": "Wichtiger Hinweis",
    "untertitel": "Adventszauber",
    "punkte": [
