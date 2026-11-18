@@ -195,6 +195,8 @@ function visibleSlides(){
 
 /* ---------- Prototyp: Folien direkt im Browser dieses Geräts speichern ---------- */
 const LOKAL_KEY = "ase_folien_lokal";
+const LOKAL_STAND_KEY = "ase_folien_stand";
+function lokalerStand(){ try{ return localStorage.getItem(LOKAL_STAND_KEY)||""; }catch(e){ return ""; } }
 function lokaleFolien(){
   try{ const d = localStorage.getItem(LOKAL_KEY); const a = d ? JSON.parse(d) : null; return Array.isArray(a) && a.length ? a : null; }
   catch(e){ return null; }
