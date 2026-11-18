@@ -355,7 +355,7 @@
   </div>
 </div>
 
-<script src="infotafel.js"></script>
+<script src="infotafel.js?v=20261118b"></script>   <!-- ?v= sorgt dafür, dass der Browser keine alte Version benutzt -->
 <script>
 /* Der Link zum Google-Skript steht in der Datei einstellungen.js */
 const E = (typeof EINSTELLUNGEN !== "undefined") ? EINSTELLUNGEN : {};
@@ -474,7 +474,7 @@ function show(step){
 
 /* Diashow anhalten / weiterlaufen lassen (für die Bearbeitungsebene) */
 function pausieren(){ clearTimeout(timer); }
-async function fortsetzen(){ await loadData(); idx=-1; $("main").dataset.started=""; show(1); }
+async function fortsetzen(){ try{ await loadData(); }catch(e){ console.error(e); } idx=-1; $("main").dataset.started=""; show(1); }
 
 /* ---------- Uhr ---------- */
 const TAGE=["Sonntag","Montag","Dienstag","Mittwoch","Donnerstag","Freitag","Samstag"];
@@ -818,11 +818,12 @@ const ADMIN = (function(){
   $("contact").textContent = CONFIG.FUSSZEILE;
   scaleStage(); addEventListener("resize", scaleStage);
   tick(); setInterval(tick, 1000);
-  await loadData();
+  try{ ADMIN.start(); }catch(e){ console.error(e); }   // Logo gedrückt halten -> PIN -> Bearbeitungsebene (zuerst, damit es immer geht)
+  try{ await loadData(); }catch(e){ console.error(e); } // falls etwas mit den Daten nicht stimmt: Standard-Folien zeigen
+  if (!ALL.length) ALL = toSlides(parseCSV(NOTFALL_CSV));
   show(1);
   setInterval(loadData, CONFIG.NEU_LADEN_MINUTEN*60*1000);
   addEventListener("storage", e=>{ if(e.key===LOKAL_KEY) loadData(); });
-  ADMIN.start();   // Logo gedrückt halten -> PIN -> Bearbeitungsebene
   // Zum Testen am PC: Pfeiltasten = vor/zurück
   addEventListener("keydown", e=>{ if(!$("admin").classList.contains("zu")) return; if(e.key==="ArrowRight") show(1); if(e.key==="ArrowLeft") show(-1); });
 })();
