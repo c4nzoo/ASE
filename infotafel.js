@@ -198,14 +198,14 @@ const LOKAL_KEY = "ase_folien_lokal";
 const LOKAL_STAND_KEY = "ase_folien_stand";
 function lokalerStand(){ try{ return localStorage.getItem(LOKAL_STAND_KEY)||""; }catch(e){ return ""; } }
 function lokaleFolien(){
-  try{ const d = localStorage.getItem(LOKAL_KEY); const a = d ? JSON.parse(d) : null; return Array.isArray(a) && a.length ? a : null; }
+  try{ const d = localStorage.getItem(LOKAL_KEY); const a = d ? JSON.parse(d) : null; const l = Array.isArray(a) ? a.filter(f=>f && typeof f==="object") : []; return l.length ? l : null; }
   catch(e){ return null; }
 }
 function objZuSlides(arr){
-  return arr.map(f=>({
+  return (Array.isArray(arr)?arr:[]).filter(f=>f && typeof f==="object").map(f=>({
     aktiv: f.aktiv !== false,
     titel: f.titel||"", untertitel: f.untertitel||"",
-    punkte: (f.punkte||[]).filter(p=>p && String(p).trim()),
+    punkte: (Array.isArray(f.punkte)?f.punkte:[]).filter(p=>p && String(p).trim()),
     symbol: f.symbol||"info", farbe: f.farbe||"blau",
     sekunden: Math.max(5, parseInt(f.sekunden,10)||STANDARD_SEKUNDEN),
     von: parseDate(f.von,false), bis: parseDate(f.bis,true)
