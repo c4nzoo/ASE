@@ -1,19 +1,19 @@
 {
  "art": "ASE-Infotafel-Sicherung",
- "stand": "2026-11-18T13:54:20.550Z",
+ "stand": "2026-11-20T07:44:00.512Z",
  "folien": [
   {
    "aktiv": true,
-   "titel": "Herzlich willkommen!",
-   "untertitel": "Albert-Schweitzer-Einrichtungen Dinslaken",
+   "titel": "Advents-Singen",
+   "untertitel": "Veranstaltung im Sozialraum ",
    "punkte": [
-    "Sie sind hier an der Anmeldung.",
-    "Bitte melden Sie sich bei uns.",
-    "Wir helfen Ihnen gern weiter.",
+    "Wir singen zusammen Winter- und Weihnachtslieder.",
+    "Freitag 27. November 2026 ab 18 Uhr in der Zechenwerkstatt",
+    "Mit Gebärdenmusikerin, Bläsern und Band",
     "",
     ""
    ],
-   "symbol": "hallo",
+   "symbol": "bildung",
    "farbe": "blau",
    "sekunden": 18,
    "von": "",
