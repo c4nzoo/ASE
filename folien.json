@@ -1,7 +1,24 @@
 {
  "art": "ASE-Infotafel-Sicherung",
- "stand": "2026-11-20T08:12:05.033Z",
+ "stand": "2026-11-20T08:16:07.347Z",
  "folien": [
+  {
+   "aktiv": true,
+   "titel": "Herzlich willkommen!",
+   "untertitel": "Albert-Schweitzer-Einrichtungen Dinslaken",
+   "punkte": [
+    "Sie sind hier an der Anmeldung.",
+    "Bitte melden Sie sich bei uns.",
+    "Wir helfen Ihnen gern weiter.",
+    "",
+    ""
+   ],
+   "symbol": "hallo",
+   "farbe": "blau",
+   "sekunden": 18,
+   "von": "",
+   "bis": ""
+  },
   {
    "aktiv": true,
    "titel": "4. Advents-Singen",
